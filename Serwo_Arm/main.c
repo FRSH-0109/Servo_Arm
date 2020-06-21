@@ -1,19 +1,23 @@
-#include <avr/io.h>
-
+#define F_CPU 8000000UL
 #define FOSC 8000000	// Clock Speed
 #define BAUD 9600
 #define MYUBRR FOSC/16/BAUD-1
 
+#include <avr/io.h>
+#include <util/delay.h>
+
 void USART_Init(unsigned int ubrr);
 void USART_Transmit(unsigned char data);
 
-uint8_t value = 4;
+uint8_t value = 1;
 int main(void)
 {
     USART_Init(MYUBRR);
-	USART_Transmit(value);
+	//USART_Transmit(value);
     while (1) 
     {
+		USART_Transmit(value);
+		_delay_ms(1000);
     }
 }
 
