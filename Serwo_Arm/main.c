@@ -1,43 +1,95 @@
-#define F_CPU 8000000UL
-#define FOSC 8000000	// Clock Speed
-#define BAUD 9600
-#define MYUBRR FOSC/16/BAUD-1
 
+# define F_CPU 1000000UL
+#include <stdint.h>
 #include <avr/io.h>
-#include <util/delay.h>
 
-void USART_Init(unsigned int ubrr);
-void USART_Transmit(unsigned char data);
-
-uint8_t value = 1;
-int main(void)
+#define BAUD_RATE_9600_BPS  52 // 9600bps
+void UART_Init(unsigned int ubrr);
+void UART_putc(unsigned char data);
+void UART_putU8(uint8_t val);
+unsigned char test = 52;
+int main()
 {
-    USART_Init(MYUBRR);
-	//USART_Transmit(value);
-    while (1) 
-    {
-		USART_Transmit(value);
-		_delay_ms(1000);
-    }
-}
-
-void USART_Init(unsigned int ubrr)
-{
-	/*Set baud rate */
-	UBRR0H = (unsigned char)(ubrr>>8);
-	UBRR0L = (unsigned char)ubrr;
-	//Enable receiver and transmitter 
-	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
-	/* Set frame format: 8data, 2stop bit */
-	UCSR0C = (1<<USBS0)|(3<<UCSZ00);
+	UART_Init(BAUD_RATE_9600_BPS);
+	while(1) 
+	{
+		UART_putU8(test);
 	}
-	
-	void USART_Transmit(unsigned char data)
-{
-/* Wait for empty transmit buffer */
-while (!(UCSR0A & (1<<UDRE0)))
-;
-/* Put data into buffer, sends the data */
-UDR0 = data;
 }
+
+void UART_Init(unsigned int ubrr)
+{
+	UBRR0H = (ubrr>>8); // Shift the 16bit value ubrr 8 times to the right and transfer the upper 8 bits to UBBR0H register.
+	UBRR0L = (ubrr);    // Copy the 16 bit value ubrr to the 8 bit UBBR0L register,Upper 8 bits are truncated while lower 8 bits are copied
+	
+	UCSR0C = 0x06;       /* Set frame format: 8data, 1stop bit  */
+	UCSR0B = (1<<TXEN0); /* Enable  transmitter                 */
+	
+}
+
+void UART_putc(unsigned char data)
+{
+	while (!( UCSR0A & (1<<UDRE0)));	 /* Wait for empty transmit buffer       */
+
+	UDR0 = data;					/* Put data into buffer, sends the data */
+					/* Put data into buffer, sends the data */
+}
+
+void UART_putU8(uint8_t val)
+{
+	uint8_t dig1 = '0', dig2 = '0';
+
+	// count value in 100s place
+	while(val >= 100)
+	{
+		val -= 100;
+		dig1++;
+	}
+
+	// count value in 10s place
+	while(val >= 10)
+	{
+		val -= 10;
+		dig2++;
+	}
+
+	// print first digit (or ignore leading zeros)
+	if(dig1 != '0') UART_putc(dig1);
+
+	// print second digit (or ignore leading zeros)
+	if((dig1 != '0') || (dig2 != '0')) UART_putc(dig2);
+
+	// print final digit
+	UART_putc(val + '0');
+	
+	while (!( UCSR0A & (1<<UDRE0)));	 /* Wait for empty transmit buffer       */
+
+	UDR0 = '\r';					/* Put data into buffer, sends the data */
+	
+	while (!( UCSR0A & (1<<UDRE0)));	 /* Wait for empty transmit buffer       */
+
+	UDR0 = '\n';
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
