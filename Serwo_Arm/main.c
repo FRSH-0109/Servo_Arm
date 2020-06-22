@@ -16,8 +16,8 @@ volatile uint8_t adc4read;
 volatile uint8_t adc5read;
 volatile uint8_t i=0;
 volatile uint16_t j=0;
-volatile uint8_t serwo1;
-volatile uint8_t serwo2;
+volatile uint16_t serwo1;
+volatile uint16_t serwo2;
 
 int main()
 {
@@ -30,8 +30,8 @@ int main()
 	while(1) 
 	{
 		UART_putU8(adc4read,adc5read);
-		serwo1=adc4read*0.2+50;
-		serwo2=adc5read*0.2+50;
+		serwo1=adc5read*-0.2+100;
+		serwo2=adc4read*0.2+50;
 	}
 }
 
@@ -130,8 +130,8 @@ void TIMER0_Init()
 
 void TIMER1_Init()
 {
-	 TCCR1B |= (1<<WGM12) | (1<<CS11);																//CTC,presalcer /8
-	 TIMSK1 |=  (1<<TIMSK1) | (1<<OCIE1A);
+	 TCCR1B |= (1<<WGM12) | (1<<CS11);																//CTC,presalcer /1
+	 TIMSK1 |=   (1<<OCIE1A);
 	 OCR1AL = 20;
 }
 
