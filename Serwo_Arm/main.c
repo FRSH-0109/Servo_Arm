@@ -1,8 +1,5 @@
 
 
-
-
-
 #define F_CPU 8000000UL
 #define BAUD_RATE_9600_BPS  52 // 9600bps
 #include <stdint.h>
@@ -17,8 +14,8 @@ void ADC_Init();
 void TIMER0_Init();
 void TIMER1_Init();
 
-volatile uint8_t adc4read;
-volatile uint8_t adc5read;
+volatile uint16_t adc4read;
+volatile uint16_t adc5read;
 volatile uint8_t i=0;
 volatile uint16_t j=0;
 volatile uint16_t serwo1;
@@ -34,9 +31,9 @@ int main()
 	sei();
 	while(1)
 	{
-		UART_putU16(adc5read);
-		serwo1=adc5read*-0.2+100;
-		serwo2=adc4read*0.2+50;
+		UART_putU16(serwo1);
+		serwo1=adc5read*-0.047+97;
+		serwo2=adc4read*0.047+49;
 	}
 }
 
@@ -183,7 +180,7 @@ void ADC_Init()
 {
 	ADCSRA |= (1<<ADEN) | (1<<ADATE) | (1<< ADIE) | (1<< ADPS0) ;	//ADC enebale, Auto Trigger Enable, Interupt enable,
 	ADCSRB |= (1<<ADTS2);											//trigger source na TIM0 overflow
-	ADMUX |= (1<<MUX2) | (1<<ADLAR) | (1<<REFS0);					//let shift dla wyniku ADC
+	ADMUX |= (1<<MUX2) | (1<<REFS0);					
 }
 
 void TIMER0_Init()
@@ -203,12 +200,12 @@ ISR(ADC_vect)
 {
 	if(!(ADMUX & (1<<MUX0)))
 	{
-		adc4read=ADCH;
+		adc4read= (ADCL) | (ADCH<<8);
 		ADMUX |= (1<<MUX0);
 	}
 	else
 	{
-		adc5read=ADCH;
+		adc5read= (ADCL) | (ADCH<<8);
 		ADMUX &= ~(1<<MUX0);
 		i++;
 		if(i>9){i=0;}
@@ -227,6 +224,5 @@ ISR(TIMER1_COMPA_vect)
 	if(j==serwo1){PORTB &= ~(1<<PORTB1);}
 	if(j==serwo2){PORTB &= ~(1<<PORTB2);}
 	j++;
-	if(j==1001){j=0;}
+	if(j==970){j=0;}
 }
-
