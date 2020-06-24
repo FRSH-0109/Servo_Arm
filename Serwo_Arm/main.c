@@ -1,4 +1,8 @@
 
+
+
+
+
 #define F_CPU 8000000UL
 #define BAUD_RATE_9600_BPS  52 // 9600bps
 #include <stdint.h>
@@ -7,10 +11,11 @@
 
 void UART_Init(unsigned int ubrr);
 void UART_putc(unsigned char data);
-void UART_putU8(uint8_t val,uint8_t val1);
-void ADC_Init();	
-void TIMER0_Init();		
-void TIMER1_Init();			
+void UART_putU8(uint8_t val1);
+void UART_putU16(uint16_t val);
+void ADC_Init();
+void TIMER0_Init();
+void TIMER1_Init();
 
 volatile uint8_t adc4read;
 volatile uint8_t adc5read;
@@ -27,9 +32,9 @@ int main()
 	ADC_Init();
 	TIMER1_Init();
 	sei();
-	while(1) 
+	while(1)
 	{
-		UART_putU8(adc4read,adc5read);
+		UART_putU16(adc5read);
 		serwo1=adc5read*-0.2+100;
 		serwo2=adc4read*0.2+50;
 	}
@@ -50,24 +55,24 @@ void UART_putc(unsigned char data)
 	while (!( UCSR0A & (1<<UDRE0)));	 /* Wait for empty transmit buffer       */
 
 	UDR0 = data;					/* Put data into buffer, sends the data */
-					/* Put data into buffer, sends the data */
+	/* Put data into buffer, sends the data */
 }
 
-void UART_putU8(uint8_t val,uint8_t val1)
+void UART_putU8(uint8_t val1)
 {
 	uint8_t dig1 = '0', dig2 = '0';
 
 	// count value in 100s place
-	while(val >= 100)
+	while(val1 >= 100)
 	{
-		val -= 100;
+		val1 -= 100;
 		dig1++;
 	}
 
 	// count value in 10s place
-	while(val >= 10)
+	while(val1 >= 10)
 	{
-		val -= 10;
+		val1 -= 10;
 		dig2++;
 	}
 
@@ -78,9 +83,9 @@ void UART_putU8(uint8_t val,uint8_t val1)
 	if((dig1 != '0') || (dig2 != '0')) UART_putc(dig2);
 
 	// print final digit
-	UART_putc(val + '0');
+	UART_putc(val1 + '0');
 	
-	 dig1 = '0', dig2 = '0';
+	dig1 = '0', dig2 = '0';
 
 	// count value in 100s place
 	while(val1 >= 100)
@@ -115,6 +120,65 @@ void UART_putU8(uint8_t val,uint8_t val1)
 	
 }
 
+void UART_putU16(uint16_t val)
+{
+	uint8_t dig1 = '0', dig2 = '0', dig3 = '0', dig4 = '0';
+
+	// count value in 10000s place
+	while(val >= 10000)
+	{
+		val -= 10000;
+		dig1++;
+	}
+
+	// count value in 1000s place
+	while(val >= 1000)
+	{
+		val -= 1000;
+		dig2++;
+	}
+
+	// count value in 100s place
+	while(val >= 100)
+	{
+		val -= 100;
+		dig3++;
+	}
+
+	// count value in 10s place
+	while(val >= 10)
+	{
+		val -= 10;
+		dig4++;
+	}
+
+	// was previous value printed?
+	uint8_t prevPrinted = 0;
+
+	// print first digit (or ignore leading zeros)
+	if(dig1 != '0') {UART_putc(dig1); prevPrinted = 1;}
+
+	// print second digit (or ignore leading zeros)
+	if(prevPrinted || (dig2 != '0')) {UART_putc(dig2); prevPrinted = 1;}
+
+	// print third digit (or ignore leading zeros)
+	if(prevPrinted || (dig3 != '0')) {UART_putc(dig3); prevPrinted = 1;}
+
+	// print third digit (or ignore leading zeros)
+	if(prevPrinted || (dig4 != '0')) {UART_putc(dig4); prevPrinted = 1;}
+
+	// print final digit
+	UART_putc(val + '0');
+	
+	while (!( UCSR0A & (1<<UDRE0)));	 /* Wait for empty transmit buffer       */
+
+	UDR0 = '\r';					/* Put data into buffer, sends the data */
+	
+	while (!( UCSR0A & (1<<UDRE0)));	 /* Wait for empty transmit buffer       */
+
+	UDR0 = '\n';
+	
+}
 void ADC_Init()
 {
 	ADCSRA |= (1<<ADEN) | (1<<ADATE) | (1<< ADIE) | (1<< ADPS0) ;	//ADC enebale, Auto Trigger Enable, Interupt enable,
@@ -130,9 +194,9 @@ void TIMER0_Init()
 
 void TIMER1_Init()
 {
-	 TCCR1B |= (1<<WGM12) | (1<<CS11);																//CTC,presalcer /1
-	 TIMSK1 |=   (1<<OCIE1A);
-	 OCR1AL = 20;
+	TCCR1B |= (1<<WGM12) | (1<<CS11);																//CTC,presalcer /1
+	TIMSK1 |=   (1<<OCIE1A);
+	OCR1AL = 20;
 }
 
 ISR(ADC_vect)
@@ -140,7 +204,7 @@ ISR(ADC_vect)
 	if(!(ADMUX & (1<<MUX0)))
 	{
 		adc4read=ADCH;
-		ADMUX |= (1<<MUX0);	
+		ADMUX |= (1<<MUX0);
 	}
 	else
 	{
@@ -149,8 +213,8 @@ ISR(ADC_vect)
 		i++;
 		if(i>9){i=0;}
 	}
-	}
-	
+}
+
 
 ISR(TIMER0_OVF_vect)
 {
@@ -165,23 +229,4 @@ ISR(TIMER1_COMPA_vect)
 	j++;
 	if(j==1001){j=0;}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
