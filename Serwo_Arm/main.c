@@ -17,9 +17,6 @@ void TIMER1_Init();
 volatile uint16_t adc4read;
 volatile uint16_t adc5read;
 volatile uint8_t i=0;
-volatile uint16_t j=0;
-volatile uint16_t serwo1;
-volatile uint16_t serwo2;
 
 int main()
 {
@@ -31,9 +28,9 @@ int main()
 	sei();
 	while(1)
 	{
-		UART_putU16(serwo1);
-		serwo1=adc5read*-0.047+97;
-		serwo2=adc4read*0.047+49;
+		UART_putU16(adc4read);
+		OCR1A=adc5read*-0.496+1016;
+		OCR1B=adc4read*0.496+508;
 	}
 }
 
@@ -191,9 +188,11 @@ void TIMER0_Init()
 
 void TIMER1_Init()
 {
-	TCCR1B |= (1<<WGM12) | (1<<CS11);																//CTC,presalcer /1
-	TIMSK1 |=   (1<<OCIE1A);
-	OCR1AL = 20;
+	TCCR1A |= (1<<COM1A1) | (1<<COM1B1);
+	TCCR1B |= (1<<CS11) | (1<<WGM13);																//Phase and freq correct mode,presalcer /8
+	ICR1 = 10160;
+	OCR1A = 1016;    //2ms
+	OCR1B = 508;	//1ms
 }
 
 ISR(ADC_vect)
@@ -218,11 +217,3 @@ ISR(TIMER0_OVF_vect)
 	
 }
 
-ISR(TIMER1_COMPA_vect)
-{
-	if(j==0){PORTB |= (1<<PORTB1) | (1<<PORTB2);}
-	if(j==serwo1){PORTB &= ~(1<<PORTB1);}
-	if(j==serwo2){PORTB &= ~(1<<PORTB2);}
-	j++;
-	if(j==970){j=0;}
-}
