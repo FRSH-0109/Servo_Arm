@@ -2,16 +2,14 @@
 #include "main.h"
 
 float Acc_x,Acc_y,Acc_z,Temperature,Gyro_x,Gyro_y,Gyro_z;
+int i=0;
+float readAverageX,readAverageY,readAverageZ;
 int main()
 {
 	char buffer[20], float_[10];
 	float Xa,Ya,Za,t;
 	float Xg=0,Yg=0,Zg=0;
-	float readX[10];
-	float readaverageX;
-	float readY[10];
-	float readaverageY;
-	int i=0;
+	
 	
 	DDRB |= (1<<PORTB1) | (1<<PORTB2);
 	
@@ -24,8 +22,8 @@ int main()
 	{
 		Read_RawValue();
 
-		Xa = Acc_x/16384.0;								/* Divide raw value by sensitivity scale factor to get real values */
-		Ya = Acc_y/16384.0;
+		Xa = (Acc_x/16384.0)*2;								/* Divide raw value by sensitivity scale factor to get real values */
+		Ya = (Acc_y/16384.0)*2;
 		Za = Acc_z/16384.0;
 
 		Xg = Gyro_x/16.4;
@@ -33,23 +31,29 @@ int main()
 		Zg = Gyro_z/16.4;
 
 		t = (Temperature/340.00)+36.53;					/* Convert temperature in °/c using formula */
-
-		Xa*=2;Ya*=2;
-		readX[i]=Xa;
-		readY[i]=Ya;
-		readaverageX=(readX[0]+readX[1]+readX[2]+readX[3]+readX[4]+readX[5]+readX[6]+readX[7]+readX[8]+readX[9])/10;
-		readaverageY=(readY[0]+readY[1]+readY[2]+readY[3]+readY[4]+readY[5]+readY[6]+readY[7]+readY[8]+readY[9])/10;
+		AverageOf10XYZ(Xa,Ya,Za);
 		//dtostrf(readaverageX, 4, 3, float_ );					/* Take values in buffer to send all parameters over USART */
 		//sprintf(buffer,float_);
  		//UART_SendString(buffer);
- 		OCR1A=readaverageX*254+762;
- 		OCR1B=readaverageY*254+762;
-		i++;
-		if(i>9){i=0;}
-		NEW_LINE();
+ 		OCR1A=readAverageX*254+762;
+ 		OCR1B=readAverageY*254+762;
+		//NEW_LINE();
 	}
 }
 
+void AverageOf10XYZ(float X,float Y, float Z)
+{
+	float readX[10],readY[10],readZ[10];
+		
+	readX[i]=X;
+	readY[i]=Y;
+	readZ[i]=Z;
+	readAverageX=(readX[0]+readX[1]+readX[2]+readX[3]+readX[4]+readX[5]+readX[6]+readX[7]+readX[8]+readX[9])/10;
+	readAverageY=(readY[0]+readY[1]+readY[2]+readY[3]+readY[4]+readY[5]+readY[6]+readY[7]+readY[8]+readY[9])/10;
+	readAverageZ=(readZ[0]+readZ[1]+readZ[2]+readZ[3]+readZ[4]+readZ[5]+readZ[6]+readZ[7]+readZ[8]+readZ[9])/10;
+	i++;
+	if(i>9){i=0;}
+}
 void UART_Init(unsigned int ubrr)
 {
 	UBRR0H = (ubrr>>8); // Shift the 16bit value ubrr 8 times to the right and transfer the upper 8 bits to UBBR0H register.
