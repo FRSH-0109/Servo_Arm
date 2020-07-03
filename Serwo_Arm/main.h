@@ -19,6 +19,7 @@
 #include "MPU6050_res_define.h"
 
 void AverageOf10XYZ(float X,float Y, float Z);
+void AverageOf100(float X,float Y);
 
 void UART_Init(unsigned int ubrr);
 void UART_putc(unsigned char data);

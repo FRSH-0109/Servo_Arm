@@ -4,12 +4,13 @@
 float Acc_x,Acc_y,Acc_z,Temperature,Gyro_x,Gyro_y,Gyro_z;
 int i=0;
 float readAverageX,readAverageY,readAverageZ;
+float readBufferX[50];
+float readBufferY[50];
 int main()
 {
 	char buffer[20], float_[10];
 	float Xa,Ya,Za,t;
 	float Xg=0,Yg=0,Zg=0;
-	
 	
 	DDRB |= (1<<PORTB1) | (1<<PORTB2);
 	
@@ -31,16 +32,36 @@ int main()
 		Zg = Gyro_z/16.4;
 
 		t = (Temperature/340.00)+36.53;					/* Convert temperature in °/c using formula */
-		AverageOf10XYZ(Xa,Ya,Za);
+		//AverageOf10XYZ(Xa,Ya,Za);
+		AverageOf100(Xa,Ya);
 		//dtostrf(readaverageX, 4, 3, float_ );					/* Take values in buffer to send all parameters over USART */
 		//sprintf(buffer,float_);
  		//UART_SendString(buffer);
  		OCR1A=readAverageX*254+762;
- 		OCR1B=readAverageY*254+762;
+ 		OCR1B=readAverageY*254+768;
 		//NEW_LINE();
 	}
 }
-
+void AverageOf100(float X,float Y)
+{
+	if(X>-1 && X<1){}
+	else{if(X>1){X=1;}else if(X<-1){X=-1;}}
+	if(Y>-1 && Y<1){}
+	else{if(Y>1){Y=1;}else if(Y<-1){Y=-1;}}
+	readBufferX[i]=X;
+	readBufferY[i]=Y;
+	readAverageX=0;
+	readAverageY=0;
+	for(int n=0;n<50;n++)
+	{
+		readAverageX+=readBufferX[n];
+		readAverageY+=readBufferY[n];
+	}
+	readAverageX/=50;
+	readAverageY/=50;
+	i++;
+	if(i>49){i=0;}
+}
 void AverageOf10XYZ(float X,float Y, float Z)
 {
 	float readX[10],readY[10],readZ[10];
